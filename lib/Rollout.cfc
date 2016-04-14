@@ -6,13 +6,17 @@ component
 	/**
 	* I initialize the Rollout library with the given storage gateway.
 	* 
-	* 
+	* @storage I am the feature persistence mechanism.
+	* @output false
 	*/
 	public any function init( required any storage ) {
 
+		// I am the JSON persistence mechanism. I implement a simple key-value store
+		// interface for string data.
 		variables.storage = storage;
 
-		variables.featureSetKey = "__features__";
+		// I am the key at which the feature set JSON data will be stored.
+		variables.featureSetStorageKey = "rollout-features";
 
 		return( this );
 
@@ -53,17 +57,16 @@ component
 		testFeatureName( featureName );
 		testGroupName( groupName );
 
-		var feature = getFeature( featureName );
+		var featureSet = getFeatureSetData( featureName );
+		var feature = featureSet[ featureName ];
 
 		if ( ! arrayContains( feature.groups, groupName ) ) {
 
 			arrayAppend( feature.groups, groupName );
-			
-			saveFeature( feature );
 
 		}
-			
-		ensureFeatureInFeatureSet( feature );
+
+		saveFeatureSetData( featureSet );
 
 	}
 
@@ -83,12 +86,12 @@ component
 		testFeatureName( featureName );
 		testPercentage( percentage );
 
-		var feature = getFeature( featureName );
+		var featureSet = getFeatureSetData( featureName );
+		var feature = featureSet[ featureName ];
 
 		feature.percentage = percentage;
 
-		saveFeature( feature );
-		ensureFeatureInFeatureSet( feature );
+		saveFeatureSetData( featureSet );
 
 	}
 
@@ -108,17 +111,16 @@ component
 		testFeatureName( featureName );
 		testUserIdentifier( userIdentifier );
 
-		var feature = getFeature( featureName );
+		var featureSet = getFeatureSetData( featureName );
+		var feature = featureSet[ featureName ];
 
 		if ( ! arrayContains( feature.users, userIdentifier ) ) {
 
 			arrayAppend( feature.users, userIdentifier );
 			
-			saveFeature( feature );
-
 		}
 			
-		ensureFeatureInFeatureSet( feature );
+		saveFeatureSetData( featureSet );
 
 	}
 
@@ -126,8 +128,8 @@ component
 	/**
 	* I activate the given feature for the given set of users.
 	* 
-	* NOTE: This is just a convienience method for calling the activateUser() multiple
-	* times (once for eac identifier in the set).
+	* NOTE: This is just a convenience method for calling the activateUser() multiple
+	* times (once for each identifier in the set).
 	* 
 	* @featureName I am the feature being activated.
 	* @userIdentifiers I am the set of users for which the feature is being activated.
@@ -154,21 +156,13 @@ component
 	*/
 	public void function clear() {
 
-		// Delete all of the features.
-		for ( var featureName in getFeatureSet() ) {
-
-			storage.delete( normalizeKey( featureName ) );
-
-		}
-
-		// Delete the feature set.
-		storage.delete( normalizeKey( featureSetKey ) );
+		deleteFeatureSetData();
 
 	}
 
 
 	/**
-	* I deactive the given feature for all users and groups.
+	* I deactivate the given feature for all users and groups.
 	* 
 	* @featureName I am the feature being deactivated.
 	* @output false
@@ -177,14 +171,14 @@ component
 
 		testFeatureName( featureName );
 
-		var feature = getFeature( featureName );
+		var featureSet = getFeatureSetData( featureName );
+		var feature = featureSet[ featureName ];
 
 		feature.percentage = 0;
 		feature.users = [];
 		feature.groups = [];
 
-		saveFeature( feature );
-		ensureFeatureInFeatureSet( feature );
+		saveFeatureSetData( featureSet );
 
 	}
 
@@ -204,17 +198,16 @@ component
 		testFeatureName( featureName );
 		testGroupName( groupName );
 
-		var feature = getFeature( featureName );
+		var featureSet = getFeatureSetData( featureName );
+		var feature = featureSet[ featureName ];
 
-		if ( arrayContains( feature.group, groupName ) ) {
+		if ( arrayContains( feature.groups, groupName ) ) {
 
-			arrayDelete( feature.group, groupName );
-
-			saveFeature( feature );
+			arrayDelete( feature.groups, groupName );
 
 		}
 		
-		ensureFeatureInFeatureSet( feature );
+		saveFeatureSetData( featureSet );
 
 	}
 
@@ -222,7 +215,7 @@ component
 	/**
 	* I deactivate the percentage-based rollout of the given feature.
 	* 
-	* NOTE: This will leave the explicit user and group targeting.
+	* NOTE: This will leave the explicit user and group targeting in tact.
 	* 
 	* @featureName I am the feature being deactivated.
 	* @output false
@@ -249,17 +242,16 @@ component
 		testFeatureName( featureName );
 		testUserIdentifier( userIdentifier );
 
-		var feature = getFeature( featureName );
+		var featureSet = getFeatureSetData( featureName );
+		var feature = featureSet[ featureName ];
 
 		if ( arrayContains( feature.users, userIdentifier ) ) {
 
 			arrayDelete( feature.users, userIdentifier );
 
-			saveFeature( feature );
-
 		}
 			
-		ensureFeatureInFeatureSet( feature );
+		saveFeatureSetData( featureSet );
 
 	}
 
@@ -272,16 +264,11 @@ component
 	*/
 	public void function delete( required string featureName ) {
 
-		var featureSet = getFeatureSet();
+		var featureSet = getFeatureSetData();
 
-		if ( arrayContains( featureSet, featureName ) ) {
+		structDelete( featureSet, featureName );
 
-			arrayDelete( featureSet, featureName );
-
-			saveFeatureSet( featureSet );
-			storage.delete( normalizeKey( featureName ) );
-
-		}
+		saveFeatureSetData( featureSet );
 
 	}
 
@@ -293,7 +280,19 @@ component
 	*/
 	public array function features() {
 
-		return( getFeatureSet() );
+		var featureSet = getFeatureSetData();
+		var featureNames = [];
+
+		// NOTE: We are using the embedded names (within each feature), rather than the
+		// collection of keys on the feature-set object in order to ensure the most 
+		// accurate "key casing".
+		for ( var featureName in featureSet ) {
+
+			arrayAppend( featureNames, featureSet[ featureName ].name );
+
+		}
+
+		return( featureNames );
 
 	}
 
@@ -302,17 +301,59 @@ component
 	* I return a struct of features in which each key represents the feature name and 
 	* each value determine whether that feature is active based on percentage rollout.
 	* 
-	* NOTE: A feature is considered active when perentage is set to 100.
+	* NOTE: A feature is considered active when its percentage is set to 100.
 	* 
 	* @output false
 	*/
 	public struct function featureStates() {
 
+		var featureSet = getFeatureSetData();
 		var states = {};
 
-		for ( var featureName in getFeatureSet() ) {
+		for ( var featureName in featureSet ) {
 
-			states[ featureName ] = isActive( featureName );
+			var feature = featureSet[ featureName ];
+
+			// NOTE: We are using the embedded names (within each feature), rather than
+			// the collection of keys on the feature-set object in order to ensure the 
+			// most accurate "key casing".
+			states[ feature.name ] = ( feature.percentage == 100 );
+
+		}
+
+		return( states );
+
+	}
+
+
+	/**
+	* I return a struct of features in which each key represents the feature name and 
+	* each value determine whether that feature is active for the given group.
+	* 
+	* @groupName I am the group for which the feature states are being checked.
+	* @output false
+	*/
+	public struct function featureStatesForGroup( required string groupName ) {
+
+		var featureSet = getFeatureSetData();
+		var states = {};
+
+		for ( var featureName in featureSet ) {
+
+			var feature = featureSet[ featureName ];
+
+			// Check to see if the feature is being rolled out all users.
+			if ( feature.percentage == 100 ) {
+
+				states[ feature.name ] = true;
+				continue; // To next feature.
+
+			}
+
+			// NOTE: We are using the embedded names (within each feature), rather than
+			// the collection of keys on the feature-set object in order to ensure the 
+			// most accurate "key casing".
+			states[ feature.name ] = arrayContains( feature.groups, groupName );
 
 		}
 
@@ -334,11 +375,59 @@ component
 		any groups = []
 		) {
 
+		var featureSet = getFeatureSetData();
 		var states = {};
 
-		for ( var featureName in getFeatureSet() ) {
+		for ( var featureName in featureSet ) {
 
-			states[ featureName ] = isActiveForUser( featureName, userIdentifier, groups );
+			var feature = featureSet[ featureName ];
+
+			// Default the state of the feature to false.
+			// --
+			// NOTE: We are using the embedded names (within each feature), rather than
+			// the collection of keys on the feature-set object in order to ensure the 
+			// most accurate "key casing".
+			states[ feature.name ] = false;
+
+			// Check to see if the feature is being rolled out to a percentage of the user-
+			// base in which this user is included.
+			if ( 
+				feature.percentage && 
+				( getBucketForUserIdentifier( userIdentifier ) <= feature.percentage ) 
+				) {
+
+				states[ feature.name ] = true;
+				continue; // To next feature.
+
+			}
+
+			// Check to see if the feature is explicitly enabled for this user.
+			if ( arrayContains( feature.users, userIdentifier ) ) {
+
+				states[ feature.name ] = true;
+				continue; // To next feature.
+
+			}
+
+			// Check to see if the feature is active for any of the provided groups.
+			for ( var groupName in groups ) {
+
+				// If the collection of groups is a struct, make sure that the value 
+				// indicates group inclusion before checking activation.
+				if ( isStruct( groups ) && ! groups[ groupName ] ) {
+
+					continue; // To next group.
+
+				}
+
+				if ( arrayContains( feature.groups, groupName ) ) {
+
+					states[ feature.name ] = true;
+					break; // Out of group-loop.
+
+				}
+
+			}
 
 		}
 
@@ -356,9 +445,9 @@ component
 	*/
 	public boolean function isActive( required string featureName ) {
 
-		var feature = getFeature( featureName );
+		var states = featureStates();
 
-		return( feature.percentage == 100 );
+		return( structKeyExists( states, featureName ) && states[ featureName ] );
 
 	}
 
@@ -375,9 +464,9 @@ component
 		required string groupName
 		) {
 
-		var feature = getFeature( featureName );
+		var states = featureStatesForGroup( groupName );
 
-		return( arrayContains( feature.groups, groupName ) );
+		return( structKeyExists( states, featureName ) && states[ featureName ] );
 
 	}
 
@@ -412,48 +501,9 @@ component
 		any groups = []
 		) {
 
-		var feature = getFeature( featureName );
+		var states = featureStatesForUser( userIdentifier, groups );
 
-		// Check to see if the feature is being rolled out to a percentage of the user-
-		// base in which this user is included.
-		if ( 
-			feature.percentage && 
-			( getBucketForUserIdentifier( userIdentifier ) <= feature.percentage ) 
-			) {
-
-			return( true );
-
-		}
-
-		// If the user is explicitly marked as active, that takes presedence.
-		if ( arrayContains( feature.users, userIdentifier ) ) {
-
-			return( true );
-
-		}
-
-		// Check to see if the feature is active for any of the provided groups.
-		for ( var groupName in groups ) {
-
-			// If the collection of groups is a struct, make sure that the value 
-			// indicates group inclusion before checking activation.
-			if ( isStruct( groups ) && ! groups[ groupName ] ) {
-
-				continue;
-
-			}
-
-			if ( arrayContains( feature.groups, groupName ) ) {
-
-				return( true );
-
-			}
-
-		}
-
-		// If we made it this far, the feature is not active for the user, neither 
-		// explicitly, nor as part of a group.
-		return( false );
+		return( structKeyExists( states, featureName ) && states[ featureName ] );
 
 	}
 
@@ -565,24 +615,13 @@ component
 
 
 	/**
-	* I ensure that the given feature is defined within the current feature set. 
+	* I delete the collection of features.
 	* 
-	* @feature I am the feature being ensured within the feature set.
 	* @output false
 	*/
-	private void function ensureFeatureInFeatureSet( required struct feature ) {
+	private void function deleteFeatureSetData() {
 
-		var featureSet = getFeatureSet();
-
-		// If the currently persisted feature set does not contain the given feature, 
-		// this is a new feature we have to add to the set.
-		if ( ! arrayContains( featureSet, feature.name ) ) {
-
-			arrayAppend( featureSet, feature.name );
-
-			saveFeatureSet( featureSet );
-
-		}
+		storage.delete( featureSetStorageKey );
 
 	}
 
@@ -603,7 +642,7 @@ component
 		var BigInteger = createObject( "java", "java.math.BigInteger" );
 
 		// Generate our BigInteger operands.
-		var checksum = BigInteger.valueOf( javaCast( "long", getChecksum( identifier ) ) );
+		var checksum = BigInteger.valueOf( javaCast( "long", getChecksum( userIdentifier ) ) );
 		var bucketCount = BigInteger.valueOf( javaCast( "int", 100 ) );
 
 		return( checksum.mod( bucketCount ) + 1 );
@@ -621,7 +660,7 @@ component
 
 		var checksum = createObject( "java", "java.util.zip.CRC32" ).init();
 
-		checksum.update( charsetDecode( userIdentifier, "utf-8" ) );
+		checksum.update( charsetDecode( input, "utf-8" ) );
 		
 		return( checksum.getValue() );
 
@@ -629,48 +668,32 @@ component
 
 
 	/**
-	* I return the feature with the given name. If the feature doesn't exist, a new
-	* feature is returned.
+	* I return the collection of features. If an optional featureName is provided, it 
+	* will be ensured in the resultant collection before it is returned.
 	* 
-	* @featureName I am the name of the feature being retreived.
+	* @featureName I am the optional feature being ensured in the resultant data.
 	* @output false
 	*/
-	private struct function getFeature( required string featureName ) {
+	private struct function getFeatureSetData( string featureName = "" ) {
 
 		try {
 
-			var feature = deserializeJson( storage.get( normalizeKey( featureName ) ) );
+			var featureSet = deserializeJson( storage.get( featureSetStorageKey ) );
 
 		} catch ( any error ) {
 
-			var feature = {
+			var featureSet = {};
+
+		}
+
+		if ( len( featureName ) && ! structKeyExists( featureSet, featureName ) ) {
+
+			featureSet[ featureName ] = {
 				name: featureName,
 				percentage: 0,
 				users: [],
 				groups: []
 			};
-
-		}
-
-		return( feature );
-
-	}
-
-
-	/**
-	* I return the collection of feature names.
-	* 
-	* @output false
-	*/
-	private array function getFeatureSet() {
-
-		try {
-
-			var featureSet = deserializeJson( storage.get( normalizeKey( featureSetKey ) ) );
-
-		} catch ( any error ) {
-
-			var featureSet = [];
 
 		}
 
@@ -680,40 +703,14 @@ component
 
 
 	/**
-	* I normalize the given key for use in the storage mechanism.
+	* I save the given collection of features.
 	* 
-	* @key I am the key being normalized for storage.
+	* @featureSet I am the collection of features being saved.
 	* @output false
 	*/
-	private string function normalizeKey( required string key ) {
+	private void function saveFeatureSetData( required struct featureSet ) {
 
-		return( "feature:" & key );
-
-	}
-
-
-	/**
-	* I save the given feature configuration.
-	* 
-	* @feature I am the feature being saved.
-	* @output false
-	*/
-	private void function saveFeature( required struct feature ) {
-
-		storage.set( normalizeKey( featureName ), serializeJson( feature ) );
-
-	}
-
-
-	/**
-	* I save the given featureSet.
-	* 
-	* @featureSet I am the feature being saved.
-	* @output false
-	*/
-	private void function saveFeatureSet( required array featureSet ) {
-
-		storage.set( normalizeKey( featureSetKey ), serializeJson( featureSet ) );
+		storage.set( featureSetStorageKey, serializeJson( featureSet ) );
 
 	}
 

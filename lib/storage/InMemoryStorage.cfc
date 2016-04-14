@@ -54,7 +54,7 @@ component
 			throw( 
 				type = "NotFound",
 				message = "The given key did not exist in the storage mechanism.",
-				detail = "The key [#key#] did not exist in the in-memory cache."
+				detail = "The key [#key#] did not exist in the cache."
 			);
 
 		}
