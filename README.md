@@ -20,9 +20,9 @@ to implement:
 Because the library stores all feature data a single JSON value, the storage mechanism
 doesn't have to deal with "keys" - it just deals with a value.
 
-* delete() - Deletes the persisted JSON value.
-* get() - Returns the persisted JSON value.
-* set( jsonData ) - Persists the given JSON value.
+* __delete__() - Deletes the persisted JSON value.
+* __get__() - Returns the persisted JSON value.
+* __set__( jsonData ) - Persists the given JSON value.
 
 If you are using the Jedis / Redis storage, the Redis key is defined as part of the storage
 instance, not the Rollout library.
@@ -65,39 +65,39 @@ When activating a feature, understand that percentage rollout acts _independentl
 explicit user and group activation. Meaning, a feature can be rolled out to 0% of users but
 _still be active_ for explicit users and groups.
 
-* activateFeature( featureName )
-* activateFeatureForGroup( featureName, groupName )
-* activateFeatureForPercentage( featureName, percentage )
-* activateFeatureForUser( featureName, userIdentifier )
-* activateFeatureForUsers( featureName, userIdentifiers )
-* ensureFeature( featureName )
+* __activateFeature__( featureName )
+* __activateFeatureForGroup__( featureName, groupName )
+* __activateFeatureForPercentage__( featureName, percentage )
+* __activateFeatureForUser__( featureName, userIdentifier )
+* __activateFeatureForUsers__( featureName, userIdentifiers )
+* __ensureFeature__( featureName )
 
 ### Deactivating Features
 
-* clearFeatures()
-* deactivateFeature( featureName )
-* deactivateFeatureForGroup( featureName, groupName )
-* deactivateFeatureForPercentage( featureName )
-* deactivateFeatureForUser( featureName, userIdentifier )
-* deleteFeature( featureName )
+* __clearFeatures__()
+* __deactivateFeature__( featureName )
+* __deactivateFeatureForGroup__( featureName, groupName )
+* __deactivateFeatureForPercentage__( featureName )
+* __deactivateFeatureForUser__( featureName, userIdentifier )
+* __deleteFeature__( featureName )
 
 ### Getting Features And Feature States
 
 My implementation of Rollout is optimized for `getFeatureStatesForUser()`. This will pull
 back all of the feature configuration for the given user in a single internal request.
 
-* getFeature( required string featureName )
-* getFeatureNames()
-* getFeatureStates()
-* getFeatureStatesForGroup( groupName )
-* getFeatureStatesForUser( userIdentifier [, groups ] )
-* getFeatures()
+* __getFeature__( required string featureName )
+* __getFeatureNames__()
+* __getFeatureStates__()
+* __getFeatureStatesForGroup__( groupName )
+* __getFeatureStatesForUser__( userIdentifier [, groups ] )
+* __getFeatures__()
 
 ### Checking Single Feature State
 
-* isFeatureActive( featureName )
-* isFeatureActiveForGroup( featureName, groupName )
-* isFeatureActiveForUser( featureName, userIdentifier [, groups ] )
+* __isFeatureActive__( featureName )
+* __isFeatureActiveForGroup__( featureName, groupName )
+* __isFeatureActiveForUser__( featureName, userIdentifier [, groups ] )
 
 ## Demo
 
