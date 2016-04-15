@@ -129,7 +129,7 @@ component
 
 
 	private array function getStackTraceFromException( required any exception ) {
-writeDump(exception);abort;
+
 		if ( ! structKeyExists( exception, "tagContext" ) ) {
 
 			return( arrayNew( 1 ) );

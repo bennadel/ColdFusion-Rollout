@@ -1,0 +1,38 @@
+
+body {
+	font-family: "Open Sans", helvetica, arial, sans-serif ;
+	font-weight: 400 ;
+}
+
+h1,
+h2,
+h3 {
+	font-weight: 600 ;
+}
+
+a {
+	color: #FF4D4D ;
+}
+
+strong {
+	font-weight: 600 ;
+}
+
+form {
+	border-bottom: 1px solid #CCCCCC ;
+	margin-bottom: 30px ;
+	padding-bottom: 20px ;
+}
+
+table a {
+	color: #333333 ;
+}
+
+table td.active {
+	background-color: #B5D954 ;
+	color: #FFFFFF ;
+}
+
+table td.active a {
+	color: #003300 ;
+}

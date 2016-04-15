@@ -18,50 +18,71 @@ component
 
 	public void function test_that_empty_works() {
 
-		assert( rollout.isActive( "foo" ) == false );		
-		assert( rollout.isActiveForUser( "foo", "myUser" ) == false );		
-		assert( rollout.isActiveForGroup( "foo", "myGroup" ) == false );
+		assert( rollout.isFeatureActive( "foo" ) == false );		
+		assert( rollout.isFeatureActiveForUser( "foo", "myUser" ) == false );		
+		assert( rollout.isFeatureActiveForGroup( "foo", "myGroup" ) == false );
 
-		assert( structIsEmpty( rollout.featureStates() ) );	
-		assert( structIsEmpty( rollout.featureStatesForUser( "myUser" ) ) );	
-		assert( structIsEmpty( rollout.featureStatesForGroup( "myGroup" ) ) );
-		assert( ! arrayLen( rollout.features() ) );
+		assert( structIsEmpty( rollout.getFeatureStates() ) );	
+		assert( structIsEmpty( rollout.getFeatureStatesForUser( "myUser" ) ) );	
+		assert( structIsEmpty( rollout.getFeatureStatesForGroup( "myGroup" ) ) );
+		assert( ! arrayLen( rollout.getFeatureNames() ) );
 
 	}
 
 
 	public void function test_that_feature_works() {
 
-		rollout.activate( "canView" );
-		rollout.deactivate( "canEdit" );
+		rollout.activateFeature( "canView" );
+		rollout.deactivateFeature( "canEdit" );
 
-		assert( rollout.isActive( "canView" ) );
-		assert( rollout.isActiveForUser( "canView", "myUser" ) );
-		assert( rollout.isActiveForGroup( "canView", "myGroup" ) );
-		assert( ! rollout.isActive( "canEdit" ) );
-		assert( ! rollout.isActiveForUser( "canEdit", "myUser" ) );
-		assert( ! rollout.isActiveForGroup( "canEdit", "myGroup" ) );
+		assert( rollout.isFeatureActive( "canView" ) );
+		assert( rollout.isFeatureActiveForUser( "canView", "myUser" ) );
+		assert( rollout.isFeatureActiveForGroup( "canView", "myGroup" ) );
+		assert( ! rollout.isFeatureActive( "canEdit" ) );
+		assert( ! rollout.isFeatureActiveForUser( "canEdit", "myUser" ) );
+		assert( ! rollout.isFeatureActiveForGroup( "canEdit", "myGroup" ) );
 
-		rollout.activate( "canEdit" );
-		rollout.deactivate( "canView" );
+		var feature = rollout.getFeature( "canView" );
 
-		assert( rollout.isActive( "canEdit" ) );
-		assert( rollout.isActiveForUser( "canEdit", "myUser" ) );
-		assert( rollout.isActiveForGroup( "canEdit", "myGroup" ) );
-		assert( ! rollout.isActive( "canView" ) );
-		assert( ! rollout.isActiveForUser( "canView", "myUser" ) );
-		assert( ! rollout.isActiveForGroup( "canView", "myGroup" ) );
+		assert( feature.name == "canView" );
+		assert( feature.percentage == 100 );
+
+		var feature = rollout.getFeature( "canEdit" );
+
+		assert( feature.name == "canEdit" );
+		assert( feature.percentage == 0 );
+
+
+		rollout.activateFeature( "canEdit" );
+		rollout.deactivateFeature( "canView" );
+
+		assert( rollout.isFeatureActive( "canEdit" ) );
+		assert( rollout.isFeatureActiveForUser( "canEdit", "myUser" ) );
+		assert( rollout.isFeatureActiveForGroup( "canEdit", "myGroup" ) );
+		assert( ! rollout.isFeatureActive( "canView" ) );
+		assert( ! rollout.isFeatureActiveForUser( "canView", "myUser" ) );
+		assert( ! rollout.isFeatureActiveForGroup( "canView", "myGroup" ) );
+
+		var feature = rollout.getFeature( "canEdit" );
+
+		assert( feature.name == "canEdit" );
+		assert( feature.percentage == 100 );
+
+		var feature = rollout.getFeature( "canView" );
+
+		assert( feature.name == "canView" );
+		assert( feature.percentage == 0 );
 
 	}
 
 
 	public void function test_that_feature_names_work() {
 
-		rollout.activate( "canView" );
-		rollout.activate( "canEdit" );
-		rollout.deactivate( "canDelete" );
+		rollout.activateFeature( "canView" );
+		rollout.activateFeature( "canEdit" );
+		rollout.deactivateFeature( "canDelete" );
 
-		var features = rollout.features();
+		var features = rollout.getFeatureNames();
 
 		assert( 
 			arrayContains( features, "canView" ) &&
@@ -70,9 +91,9 @@ component
 		);
 
 		var stateSets = [
-			rollout.featureStates(),
-			rollout.featureStatesForUser( "myUser" ),
-			rollout.featureStatesForGroup( "myGroup" )
+			rollout.getFeatureStates(),
+			rollout.getFeatureStatesForUser( "myUser" ),
+			rollout.getFeatureStatesForGroup( "myGroup" )
 		];
 
 		for ( var states in stateSets ) {
@@ -90,47 +111,47 @@ component
 
 	public void function test_that_user_groups_work() {
 
-		rollout.activateGroup( "canView", "myGroup" );
+		rollout.activateFeatureForGroup( "canView", "myGroup" );
 
-		assert( ! rollout.isActiveForUser( "canView", 1 ) );
-		assert( rollout.isActiveForUser( "canView", 1, [ "myGroup" ] ) );
-		assert( rollout.isActiveForUser( "canView", 1, { "myGroup": true } ) );
-		assert( ! rollout.isActiveForUser( "canView", 1, { "myGroup": false } ) );
-		assert( ! rollout.isActiveForUser( "canView", 1, { "otherGroup": true } ) );
+		assert( ! rollout.isFeatureActiveForUser( "canView", 1 ) );
+		assert( rollout.isFeatureActiveForUser( "canView", 1, [ "myGroup" ] ) );
+		assert( rollout.isFeatureActiveForUser( "canView", 1, { "myGroup": true } ) );
+		assert( ! rollout.isFeatureActiveForUser( "canView", 1, { "myGroup": false } ) );
+		assert( ! rollout.isFeatureActiveForUser( "canView", 1, { "otherGroup": true } ) );
 
 	}
 
 
 	public void function test_that_groups_work() {
 
-		rollout.activateGroup( "canView", "all" );
-		rollout.activateGroup( "canDelete", "admins" );
+		rollout.activateFeatureForGroup( "canView", "all" );
+		rollout.activateFeatureForGroup( "canDelete", "admins" );
 
-		assert( rollout.isActiveForGroup( "canView", "all" ) );
-		assert( ! rollout.isActiveForGroup( "canView", "admins" ) );
+		assert( rollout.isFeatureActiveForGroup( "canView", "all" ) );
+		assert( ! rollout.isFeatureActiveForGroup( "canView", "admins" ) );
 
-		rollout.deactivateGroup( "canDelete", "all" );
+		rollout.deactivateFeatureForGroup( "canDelete", "all" );
 
-		assert( ! rollout.isActiveForGroup( "canDelete", "all" ) );
-		assert( rollout.isActiveForGroup( "canDelete", "admins" ) );
+		assert( ! rollout.isFeatureActiveForGroup( "canDelete", "all" ) );
+		assert( rollout.isFeatureActiveForGroup( "canDelete", "admins" ) );
 
-		rollout.deactivateGroup( "canDelete", "admins" );
+		rollout.deactivateFeatureForGroup( "canDelete", "admins" );
 
-		assert( ! rollout.isActiveForGroup( "canDelete", "all" ) );
-		assert( ! rollout.isActiveForGroup( "canDelete", "admins" ) );
+		assert( ! rollout.isFeatureActiveForGroup( "canDelete", "all" ) );
+		assert( ! rollout.isFeatureActiveForGroup( "canDelete", "admins" ) );
 
 	}
 
 
 	public void function test_that_percentage_works() {
 
-		rollout.activatePercentage( "canView", 0 );
+		rollout.activateFeatureForPercentage( "canView", 0 );
 
 		var count = 0;
 
 		for ( var i = 1 ; i <= 100 ; i++ ) {
 
-			if ( rollout.isActiveForUser( "canView", "user-#i#" ) ) {
+			if ( rollout.isFeatureActiveForUser( "canView", "user-#i#" ) ) {
 
 				count++;
 
@@ -141,13 +162,13 @@ component
 		assert( count == 0 );
 
 
-		rollout.activatePercentage( "canView", 100 );
+		rollout.activateFeatureForPercentage( "canView", 100 );
 
 		var count = 0;
 
 		for ( var i = 1 ; i <= 100 ; i++ ) {
 
-			if ( rollout.isActiveForUser( "canView", "user-#i#" ) ) {
+			if ( rollout.isFeatureActiveForUser( "canView", "user-#i#" ) ) {
 
 				count++;
 
@@ -158,13 +179,13 @@ component
 		assert( count == 100 );
 
 
-		rollout.activatePercentage( "canView", 50 );
+		rollout.activateFeatureForPercentage( "canView", 50 );
 
 		var count = 0;
 
 		for ( var i = 1 ; i <= 100 ; i++ ) {
 
-			if ( rollout.isActiveForUser( "canView", "user-#i#" ) ) {
+			if ( rollout.isFeatureActiveForUser( "canView", "user-#i#" ) ) {
 
 				count++;
 
@@ -175,27 +196,27 @@ component
 		assert( ( count > 40 ) && ( count < 70 ) );
 
 
-		rollout.activatePercentage( "canDelete", 100 );
+		rollout.activateFeatureForPercentage( "canDelete", 100 );
 
-		assert( rollout.isActiveForUser( "canDelete", "myUser" ) );
+		assert( rollout.isFeatureActiveForUser( "canDelete", "myUser" ) );
 
-		rollout.deactivatePercentage( "canDelete" );
+		rollout.deactivateFeatureForPercentage( "canDelete" );
 		
-		assert( ! rollout.isActiveForUser( "canDelete", "myUser" ) );
+		assert( ! rollout.isFeatureActiveForUser( "canDelete", "myUser" ) );
 		
 	}
 
 
 	public void function test_that_user_works() {
 
-		rollout.activateUser( "canView", "myUser" );
-		rollout.deactivateUser( "canDelete", "myUser" );
+		rollout.activateFeatureForUser( "canView", "myUser" );
+		rollout.deactivateFeatureForUser( "canDelete", "myUser" );
 
-		assert( rollout.isActiveForUser( "canView", "myUser" ) );
-		assert( ! rollout.isActiveForUser( "canEdit", "myUser" ) );
-		assert( ! rollout.isActiveForUser( "canDelete", "myUser" ) );
+		assert( rollout.isFeatureActiveForUser( "canView", "myUser" ) );
+		assert( ! rollout.isFeatureActiveForUser( "canEdit", "myUser" ) );
+		assert( ! rollout.isFeatureActiveForUser( "canDelete", "myUser" ) );
 
-		var states = rollout.featureStatesForUser( "myUser" );
+		var states = rollout.getFeatureStatesForUser( "myUser" );
 
 		assert(
 			( states.canView == true ) &&
@@ -207,48 +228,53 @@ component
 
 	public void function test_that_clear_and_delete_work() {
 
-		rollout.activate( "canView" );
-		rollout.activate( "canEdit" );
+		rollout.activateFeature( "canView" );
+		rollout.activateFeature( "canEdit" );
 
-		assert( rollout.isActive( "canView" ) );
-		assert( rollout.isActive( "canEdit" ) );
-		assert( arrayLen( rollout.features() ) == 2 );
+		assert( rollout.isFeatureActive( "canView" ) );
+		assert( rollout.isFeatureActive( "canEdit" ) );
+		assert( arrayLen( rollout.getFeatureNames() ) == 2 );
 
-		rollout.delete( "canEdit" );
+		rollout.deleteFeature( "canEdit" );
 
-		assert( rollout.isActive( "canView" ) );
-		assert( ! rollout.isActive( "canEdit" ) );
-		assert( arrayLen( rollout.features() ) == 1 );
+		assert( rollout.isFeatureActive( "canView" ) );
+		assert( ! rollout.isFeatureActive( "canEdit" ) );
+		assert( arrayLen( rollout.getFeatureNames() ) == 1 );
 
-		rollout.clear();
+		rollout.clearFeatures();
 
-		assert( ! rollout.isActive( "canView" ) );
-		assert( ! rollout.isActive( "canEdit" ) );
-		assert( arrayLen( rollout.features() ) == 0 );
+		assert( ! rollout.isFeatureActive( "canView" ) );
+		assert( ! rollout.isFeatureActive( "canEdit" ) );
+		assert( arrayLen( rollout.getFeatureNames() ) == 0 );
 
 	}
 
 
 	public void function test_that_multi_users_works() {
 
-		rollout.activateUsers( "canView", [ "userA", "userB" ] );
+		rollout.activateFeatureForUsers( "canView", [ "userA", "userB" ] );
 
-		assert( rollout.isActiveForUser( "canView", "userA" ) );
-		assert( rollout.isActiveForUser( "canView", "userB" ) );
-		assert( ! rollout.isActiveForUser( "canView", "userC" ) );
+		assert( rollout.isFeatureActiveForUser( "canView", "userA" ) );
+		assert( rollout.isFeatureActiveForUser( "canView", "userB" ) );
+		assert( ! rollout.isFeatureActiveForUser( "canView", "userC" ) );
 
 	}
 
 
-	public void function test_that_identifiers_are_case_sensitive() {
+	public void function test_that_ensure_creates_feature() {
 
-		rollout.activateUser( "canView", "myUser" );
-		rollout.activateGroup( "canView", "myGroup" );
+		var featureNames = rollout.getFeatureNames();
 
-		assert( rollout.isActiveForUser( "canView", "myUser" ) );
-		assert( ! rollout.isActiveForUser( "canView", "MYUSER" ) );
-		assert( rollout.isActiveForGroup( "canView", "myGroup" ) );
-		assert( ! rollout.isActiveForGroup( "canView", "MYGROUP" ) );
+		assert( ! arrayContains( featureNames, "canView" ) );
+		assert( ! arrayContains( featureNames, "canEdit" ) );
+
+		rollout.ensureFeature( "canView" );
+		rollout.ensureFeature( "canEdit" );
+
+		var featureNames = rollout.getFeatureNames();
+
+		assert( arrayContains( featureNames, "canView" ) );
+		assert( arrayContains( featureNames, "canEdit" ) );
 
 	}
 

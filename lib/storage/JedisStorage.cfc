@@ -4,18 +4,17 @@ component
 	{
 
 	/**
-	* I initialize the Jedis storage gateway with the given connection pool. As with all
-	* of the storage gateways in this library, the keys are case-sensitive.
+	* I initialize the Jedis storage gateway with the given connection pool.
 	* 
 	* @output false
 	*/
 	public any function init( 
 		required any jedisPool,
-		required string keyPrefix
+		required string key
 		) {
 
 		variables.jedisPool = arguments.jedisPool;
-		variables.keyPrefix = arguments.keyPrefix;
+		variables.key = arguments.key;
 
 		return( this );
 
@@ -28,17 +27,16 @@ component
 
 
 	/**
-	* I delete the value stored at the given key.
+	* I delete the stored value.
 	* 
-	* @key I am the key being deleted from the storage.
 	* @output false 
 	*/
-	public void function delete( required string key ) {
+	public void function delete() {
 
 		getResource(
 			function( redis ) {
 
-				return( redis.del( javaCast( "string", normalize( key ) ) ) );
+				redis.del( javaCast( "string", key ) );
 				
 			}
 		);
@@ -47,29 +45,26 @@ component
 
 
 	/**
-	* I get the value stored at the given key. If the given key does not exist, 
-	* a NotFound error is thrown.
+	* I get the stored value. If no value is stored, a NotFound error is thrown.
 	* 
-	* @key I am the key being retrieved from the storage.
 	* @output false 
 	*/
-	public string function get( required string key ) {
+	public string function get() {
 
 		var value = getResource(
 			function( redis ) {
 
-				return( redis.get( javaCast( "string", normalize( key ) ) ) );
+				return( redis.get( javaCast( "string", key ) ) );
 				
 			}
 		);
 
-		if ( isNull( value ) ) {
+		if ( isNull( value ) || ! len( value ) ) {
 
 			throw( 
 				type = "NotFound",
-				message = "The given key did not exist in the storage mechanism.",
-				detail = "The key [#key#] did not exist in the cache.",
-				extendedInfo = "Normalized key: [#normalize( key )#]"
+				message = "No value has been stored.",
+				detail = "The Redis key [#key#] does not exist or is empty."
 			);
 
 		}
@@ -80,21 +75,17 @@ component
 
 
 	/**
-	* I store the given value at the given key. 
+	* I persist the given value to the store.
 	* 
-	* @key I am the key being set.
 	* @value I am the value being stored.
 	* @output false 
 	*/
-	public void function set(
-		required string key,
-		required string value
-		) {
+	public void function set( required string value ) {
 
 		getResource(
 			function( redis ) {
 
-				redis.set( javaCast( "string", normalize( key ) ), javaCast( "string", value ) );
+				redis.set( javaCast( "string", key ), javaCast( "string", value ) );
 				
 			}
 		);
@@ -157,19 +148,6 @@ component
 	private boolean function isConnectionError( required any error ) {
 
 		return( error.type == "redis.clients.jedis.exceptions.JedisConnectionException" );
-
-	}
-
-
-	/**
-	* I normalize the key for use in the Redis store.
-	* 
-	* @key I am the key being normalized.
-	* @output false
-	*/
-	private string function normalize( required string key ) {
-
-		return( keyPrefix & key );
 
 	}
 

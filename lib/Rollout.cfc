@@ -15,9 +15,6 @@ component
 		// interface for string data.
 		variables.storage = storage;
 
-		// I am the key at which the feature set JSON data will be stored.
-		variables.featureSetStorageKey = "rollout-features";
-
 		return( this );
 
 	}
@@ -29,14 +26,14 @@ component
 
 
 	/**
-	* I activate the given feature for all users.
+	* I activate the given feature for all users (turning the percentage up to 100).
 	* 
 	* @featureName I am the feature being activated.
 	* @output false
 	*/
-	public void function activate( required string featureName ) {
+	public void function activateFeature( required string featureName ) {
 
-		activatePercentage( featureName, 100 );
+		activateFeatureForPercentage( featureName, 100 );
 
 	}
 
@@ -49,7 +46,7 @@ component
 	* @groupName I am the group for which the feature is being activated.
 	* @output false
 	*/
-	public void function activateGroup(
+	public void function activateFeatureForGroup(
 		required string featureName,
 		required string groupName
 		) {
@@ -60,7 +57,7 @@ component
 		var featureSet = getFeatureSetData( featureName );
 		var feature = featureSet[ featureName ];
 
-		if ( ! arrayContains( feature.groups, groupName ) ) {
+		if ( ! arrayContainsSafe( feature.groups, groupName ) ) {
 
 			arrayAppend( feature.groups, groupName );
 
@@ -78,7 +75,7 @@ component
 	* @percentage I am the percentage of users for which the feature is being activated.
 	* @output false
 	*/
-	public void function activatePercentage(
+	public void function activateFeatureForPercentage(
 		required string featureName,
 		required numeric percentage
 		) {
@@ -103,7 +100,7 @@ component
 	* @userIdentifier I am the user for which the feature is being activated.
 	* @output false
 	*/
-	public void function activateUser(
+	public void function activateFeatureForUser(
 		required string featureName,
 		required string userIdentifier
 		) {
@@ -114,7 +111,7 @@ component
 		var featureSet = getFeatureSetData( featureName );
 		var feature = featureSet[ featureName ];
 
-		if ( ! arrayContains( feature.users, userIdentifier ) ) {
+		if ( ! arrayContainsSafe( feature.users, userIdentifier ) ) {
 
 			arrayAppend( feature.users, userIdentifier );
 			
@@ -128,21 +125,21 @@ component
 	/**
 	* I activate the given feature for the given set of users.
 	* 
-	* NOTE: This is just a convenience method for calling the activateUser() multiple
-	* times (once for each identifier in the set).
+	* NOTE: This is just a convenience method for calling the activateFeatureForUser()
+	* multiple times (once for each identifier in the set).
 	* 
 	* @featureName I am the feature being activated.
 	* @userIdentifiers I am the set of users for which the feature is being activated.
 	* @output false
 	*/
-	public void function activateUsers(
+	public void function activateFeatureForUsers(
 		required string featureName,
 		required array userIdentifiers
 		) {
 
 		for ( var userIdentifier in userIdentifiers ) {
 
-			activateUser( featureName, userIdentifier );
+			activateFeatureForUser( featureName, userIdentifier );
 
 		}
 
@@ -154,7 +151,7 @@ component
 	* 
 	* @output false
 	*/
-	public void function clear() {
+	public void function clearFeatures() {
 
 		deleteFeatureSetData();
 
@@ -167,7 +164,7 @@ component
 	* @featureName I am the feature being deactivated.
 	* @output false
 	*/
-	public void function deactivate( required string featureName ) {
+	public void function deactivateFeature( required string featureName ) {
 
 		testFeatureName( featureName );
 
@@ -190,7 +187,7 @@ component
 	* @groupName I am the group for which the feature is being deactivated.
 	* @output false
 	*/
-	public void function deactivateGroup(
+	public void function deactivateFeatureForGroup(
 		required string featureName,
 		required string groupName
 		) {
@@ -201,7 +198,7 @@ component
 		var featureSet = getFeatureSetData( featureName );
 		var feature = featureSet[ featureName ];
 
-		if ( arrayContains( feature.groups, groupName ) ) {
+		if ( arrayContainsSafe( feature.groups, groupName ) ) {
 
 			arrayDelete( feature.groups, groupName );
 
@@ -215,14 +212,14 @@ component
 	/**
 	* I deactivate the percentage-based rollout of the given feature.
 	* 
-	* NOTE: This will leave the explicit user and group targeting in tact.
+	* CAUTION: This will leave the explicit user and group targeting in tact.
 	* 
 	* @featureName I am the feature being deactivated.
 	* @output false
 	*/
-	public void function deactivatePercentage( required string featureName ) {
+	public void function deactivateFeatureForPercentage( required string featureName ) {
 
-		activatePercentage( featureName, 0 );
+		activateFeatureForPercentage( featureName, 0 );
 
 	}
 
@@ -234,7 +231,7 @@ component
 	* @userIdentifier I am the user for which the feature is being deactivated.
 	* @output false
 	*/
-	public void function deactivateUser(
+	public void function deactivateFeatureForUser(
 		required string featureName,
 		required string userIdentifier
 		) {
@@ -245,7 +242,7 @@ component
 		var featureSet = getFeatureSetData( featureName );
 		var feature = featureSet[ featureName ];
 
-		if ( arrayContains( feature.users, userIdentifier ) ) {
+		if ( arrayContainsSafe( feature.users, userIdentifier ) ) {
 
 			arrayDelete( feature.users, userIdentifier );
 
@@ -262,7 +259,7 @@ component
 	* @featureName I am the feature being deleted.
 	* @output false
 	*/
-	public void function delete( required string featureName ) {
+	public void function deleteFeature( required string featureName ) {
 
 		var featureSet = getFeatureSetData();
 
@@ -274,18 +271,48 @@ component
 
 
 	/**
+	* I ensure that the given feature exists. If it does not, it is created and defaulted
+	* to an inactive state.
+	* 
+	* @output false
+	*/
+	public void function ensureFeature( required string featureName ) {
+
+		var featureSet = getFeatureSetData();
+
+		if ( ! structKeyExists( featureSet, featureName ) ) {
+
+			saveFeatureSetData( getFeatureSetData( featureName ) );
+
+		}
+
+	}
+
+
+	/**
+	* I get the given feature configuration.
+	* 
+	* @output false
+	*/
+	public struct function getFeature( required string featureName ) {
+
+		var featureSet = getFeatureSetData( featureName );
+
+		return( featureSet[ featureName ] );
+
+	}
+
+
+	/**
 	* I return the collection of known feature names.
 	* 
 	* @output false
 	*/
-	public array function features() {
+	public array function getFeatureNames() {
 
 		var featureSet = getFeatureSetData();
 		var featureNames = [];
 
-		// NOTE: We are using the embedded names (within each feature), rather than the
-		// collection of keys on the feature-set object in order to ensure the most 
-		// accurate "key casing".
 		for ( var featureName in featureSet ) {
 
 			arrayAppend( featureNames, featureSet[ featureName ].name );
@@ -305,7 +332,7 @@ component
 	* 
 	* @output false
 	*/
-	public struct function featureStates() {
+	public struct function getFeatureStates() {
 
 		var featureSet = getFeatureSetData();
 		var states = {};
@@ -314,9 +341,6 @@ component
 
 			var feature = featureSet[ featureName ];
 
-			// NOTE: We are using the embedded names (within each feature), rather than
-			// the collection of keys on the feature-set object in order to ensure the 
-			// most accurate "key casing".
 			states[ feature.name ] = ( feature.percentage == 100 );
 
 		}
@@ -328,12 +352,12 @@ component
 
 	/**
 	* I return a struct of features in which each key represents the feature name and 
-	* each value determine whether that feature is active for the given group.
+	* each value determines whether that feature is active for the given group.
 	* 
 	* @groupName I am the group for which the feature states are being checked.
 	* @output false
 	*/
-	public struct function featureStatesForGroup( required string groupName ) {
+	public struct function getFeatureStatesForGroup( required string groupName ) {
 
 		var featureSet = getFeatureSetData();
 		var states = {};
@@ -350,10 +374,7 @@ component
 
 			}
 
-			// NOTE: We are using the embedded names (within each feature), rather than
-			// the collection of keys on the feature-set object in order to ensure the 
-			// most accurate "key casing".
-			states[ feature.name ] = arrayContains( feature.groups, groupName );
+			states[ feature.name ] = arrayContainsSafe( feature.groups, groupName );
 
 		}
 
@@ -366,11 +387,25 @@ component
 	* I return a struct of features in which each key represents the feature name and 
 	* each value determine whether that feature is active for the given user.
 	* 
+	* When checking the feature status for a given user, you can pass in an optional
+	* collection of groups. This can be an array of group names of which the user is 
+	* a member
+	* 
+	* groups: [ "admins", "employees" ]
+	* 
+	* ... or, it can be a struct in which the keys are the group names and the values 
+	* are boolean flags that indicate whether or not the user is member of that group:
+	* 
+	* groups: {
+	*   "admins": false,
+	*   "employees": true
+	* }
+	* 
 	* @userIdentifier I am the user for which the feature states are being checked.
 	* @groups I am the optional groups (array | struct) associated with the given user.
 	* @output false
 	*/
-	public struct function featureStatesForUser( 
+	public struct function getFeatureStatesForUser( 
 		required string userIdentifier,
 		any groups = []
 		) {
@@ -383,17 +418,16 @@ component
 			var feature = featureSet[ featureName ];
 
 			// Default the state of the feature to false.
-			// --
-			// NOTE: We are using the embedded names (within each feature), rather than
-			// the collection of keys on the feature-set object in order to ensure the 
-			// most accurate "key casing".
 			states[ feature.name ] = false;
 
-			// Check to see if the feature is being rolled out to a percentage of the user-
-			// base in which this user is included.
+			// Check to see if the feature is being rolled out to a percentage of the 
+			// user-base in which this user is included.
+			// --
+			// NOTE: We are passing the feature name is a "salt" for the bucket 
+			// calculation (in order to help distribute the features a bit more).
 			if ( 
 				feature.percentage && 
-				( getBucketForUserIdentifier( userIdentifier ) <= feature.percentage ) 
+				( getBucketForUserIdentifier( userIdentifier, feature.name ) <= feature.percentage ) 
 				) {
 
 				states[ feature.name ] = true;
@@ -402,7 +436,7 @@ component
 			}
 
 			// Check to see if the feature is explicitly enabled for this user.
-			if ( arrayContains( feature.users, userIdentifier ) ) {
+			if ( arrayContainsSafe( feature.users, userIdentifier ) ) {
 
 				states[ feature.name ] = true;
 				continue; // To next feature.
@@ -420,7 +454,7 @@ component
 
 				}
 
-				if ( arrayContains( feature.groups, groupName ) ) {
+				if ( arrayContainsSafe( feature.groups, groupName ) ) {
 
 					states[ feature.name ] = true;
 					break; // Out of group-loop.
@@ -437,15 +471,30 @@ component
 
 
 	/**
+	* I return the collection of feature configurations as a struct in which each feature
+	* name is a key in the resultant collection.
+	* 
+	* @output false
+	*/
+	public struct function getFeatures() {
+
+		var featureSet = getFeatureSetData();
+		
+		return( featureSet );
+
+	}
+
+
+	/**
 	* I determine if the given feature if fully activated. This is only true if the 
 	* rollout of the given feature is at 100 percent.
 	* 
 	* @featureName I am the name of the feature being checked.
 	* @output false
 	*/
-	public boolean function isActive( required string featureName ) {
+	public boolean function isFeatureActive( required string featureName ) {
 
-		var states = featureStates();
+		var states = getFeatureStates();
 
 		return( structKeyExists( states, featureName ) && states[ featureName ] );
 
@@ -459,12 +508,12 @@ component
 	* @groupName I am the group for which the feature is being checked.
 	* @output false
 	*/
-	public boolean function isActiveForGroup(
+	public boolean function isFeatureActiveForGroup(
 		required string featureName,
 		required string groupName
 		) {
 
-		var states = featureStatesForGroup( groupName );
+		var states = getFeatureStatesForGroup( groupName );
 
 		return( structKeyExists( states, featureName ) && states[ featureName ] );
 
@@ -474,34 +523,18 @@ component
 	/**
 	* I determine if the given feature is active for the given user.
 	* 
-	* When checking the feature status for a given user,  you can pass in an optional
-	* collection of groups. This can be an array of group names:
-	* 
-	* groups: [ "admins", "employees" ]
-	* 
-	* ... or it can be a struct in which the keys are group names and the values are 
-	* boolean flags that indicate whether or not the user is part of that group:
-	* 
-	* groups: {
-	* "admins": false,
-	* "employees": true
-	* }
-	* 
-	* CAUTION: The groups names are case-sensitive! So, be sure to quote your struct keys
-	* if you are passing in a struct.
-	* 
 	* @featureName I am the feature being checked.
 	* @userIdentifier I am the user for which the feature is being checked.
 	* @groups I am the collection of groups that the user is part of.
 	* @output false
 	*/
-	public boolean function isActiveForUser(
+	public boolean function isFeatureActiveForUser(
 		required string featureName,
 		required string userIdentifier,
 		any groups = []
 		) {
 
-		var states = featureStatesForUser( userIdentifier, groups );
+		var states = getFeatureStatesForUser( userIdentifier, groups );
 
 		return( structKeyExists( states, featureName ) && states[ featureName ] );
 
@@ -615,13 +648,43 @@ component
 
 
 	/**
+	* I implement a "safe" version of the arrayContainsSafe() method. ColdFusion 10 
+	* is lame in how it handles type comparisons in the native arrayContains() function.
+	* As such, we have to implement a version that can convert between values a bit
+	* more seamlessly.
+	* 
+	* @value I am the collection of values being searched.
+	* @target I am the target value whose existence is being checked.
+	* @output false
+	*/
+	private boolean function arrayContainsSafe(
+		required array values,
+		required string target
+		) {
+
+		for ( var value in values ) {
+
+			if ( value == target ) {
+
+				return( true );
+
+			}
+
+		}
+
+		return( false );
+
+	}
+
+
+	/**
 	* I delete the collection of features.
 	* 
 	* @output false
 	*/
 	private void function deleteFeatureSetData() {
 
-		storage.delete( featureSetStorageKey );
+		storage.delete();
 
 	}
 
@@ -632,9 +695,13 @@ component
 	* be mapped to a percentage.
 	* 
 	* @userIdentifier I the user identifier for which we are calculating the bucket.
+	* @salt I am the optional salt used to help distribute percentages across users.
 	* @output false
 	*/
-	private numeric function getBucketForUserIdentifier( required string userIdentifier ) {
+	private numeric function getBucketForUserIdentifier( 
+		required string userIdentifier,
+		string salt = ""
+		) {
 
 		// The checksum algorithm interface returns a LONG value, which we cannot use
 		// with the normal modulus operator. As such, we have to fallback to using the
@@ -642,7 +709,7 @@ component
 		var BigInteger = createObject( "java", "java.math.BigInteger" );
 
 		// Generate our BigInteger operands.
-		var checksum = BigInteger.valueOf( javaCast( "long", getChecksum( userIdentifier ) ) );
+		var checksum = BigInteger.valueOf( javaCast( "long", getChecksum( reverse( userIdentifier ) & salt ) ) );
 		var bucketCount = BigInteger.valueOf( javaCast( "int", 100 ) );
 
 		return( checksum.mod( bucketCount ) + 1 );
@@ -678,7 +745,7 @@ component
 
 		try {
 
-			var featureSet = deserializeJson( storage.get( featureSetStorageKey ) );
+			var featureSet = deserializeJson( storage.get() );
 
 		} catch ( any error ) {
 
@@ -710,7 +777,7 @@ component
 	*/
 	private void function saveFeatureSetData( required struct featureSet ) {
 
-		storage.set( featureSetStorageKey, serializeJson( featureSet ) );
+		storage.set( serializeJson( featureSet ) );
 
 	}
 

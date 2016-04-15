@@ -4,16 +4,13 @@ component
 	{
 
 	/**
-	* I initialize the in-memory storage gateway. As with all of the storage gateways
-	* in this library, the keys are case-sensitive.
+	* I initialize the in-memory storage gateway.
 	* 
 	* @output false
 	*/
 	public any function init() {
 
-		// Not all storage gateways will be case-insensitive for key values. As such, 
-		// we have to use a case-sensitive mechanism as the lowest common denominator.
-		cache = createObject( "java", "java.util.HashMap" ).init();
+		storedValue = "";
 
 		return( this );
 
@@ -26,57 +23,47 @@ component
 
 
 	/**
-	* I delete the value stored at the given key.
+	* I delete the stored value.
 	* 
-	* @key I am the key being deleted from the storage.
 	* @output false 
 	*/
-	public void function delete( required string key ) {
+	public void function delete() {
 
-		cache.remove( javaCast( "string", key ) );
+		storedValue = "";
 
 	}
 
 
 	/**
-	* I get the value stored at the given key. If the given key does not exist, 
-	* a NotFound error is thrown.
+	* I get the stored value. If no value is stored, a NotFound error is thrown.
 	* 
-	* @key I am the key being retrieved from the storage.
 	* @output false 
 	*/
-	public string function get( required string key ) {
+	public string function get() {
 
-		var value = cache.get( javaCast( "string", key ) );
-
-		if ( isNull( value ) ) {
+		if ( ! len( storedValue ) ) {
 
 			throw( 
 				type = "NotFound",
-				message = "The given key did not exist in the storage mechanism.",
-				detail = "The key [#key#] did not exist in the cache."
+				message = "No value has been stored."
 			);
 
 		}
 
-		return( value );
+		return( storedValue );
 
 	}
 
 
 	/**
-	* I store the given value at the given key. 
+	* I persist the given value to the store.
 	* 
-	* @key I am the key being set.
 	* @value I am the value being stored.
 	* @output false 
 	*/
-	public void function set(
-		required string key,
-		required string value
-		) {
+	public void function set( required string value ) {
 
-		cache.put( javaCast( "string", key ), javaCast( "string", value ) );
+		storedValue = value;
 
 	}
 
