@@ -51,7 +51,58 @@ var rollout = new lib.Rollout( storage );
 
 ## Usage
 
-.... coming soon.
+The primary gesture in a feature rollout is to check to see whether or not a given feature 
+is activated. This can be done based on percentages, groups, and user identifiers. When 
+checked on its own, a feature is only considered to be "active" if it is being rolled-out
+to 100% of the users. When checked in the context of a user (and optional groups), a feature
+can be partially active.
+
+The following list represents the Rollout API broken down by use-case.
+
+### Activating Features
+
+When activating a feature, understand that percentage rollout acts _independently_ from the
+explicit user and group activation. Meaning, a feature can be rolled out to 0% of users but
+_still be active_ for explicit users and groups.
+
+* activateFeature( featureName )
+* activateFeatureForGroup( featureName, groupName )
+* activateFeatureForPercentage( featureName, percentage )
+* activateFeatureForUser( featureName, userIdentifier )
+* activateFeatureForUsers( featureName, userIdentifiers )
+* ensureFeature( featureName )
+
+### Deactivating Features
+
+* clearFeatures()
+* deactivateFeature( featureName )
+* deactivateFeatureForGroup( featureName, groupName )
+* deactivateFeatureForPercentage( featureName )
+* deactivateFeatureForUser( featureName, userIdentifier )
+* deleteFeature( featureName )
+
+### Getting Features And Feature States
+
+My implementation of Rollout is optimized for `getFeatureStatesForUser()`. This will pull
+back all of the feature configuration for the given user in a single internal request.
+
+* getFeature( required string featureName )
+* getFeatureNames()
+* getFeatureStates()
+* getFeatureStatesForGroup( groupName )
+* getFeatureStatesForUser( userIdentifier [, groups ] )
+* getFeatures()
+
+### Checking Single Feature State
+
+* isFeatureActive( featureName )
+* isFeatureActiveForGroup( featureName, groupName )
+* isFeatureActiveForUser( featureName, userIdentifier [, groups ] )
+
+## Demo
+
+I have included a Jedis storage demo that helps to illustrates how several of the features
+in Rollout work. This demo assumes that Redis is running on `localhost`.
 
 
 [bennadel]: http://www.bennadel.com
