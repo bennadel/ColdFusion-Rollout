@@ -32,7 +32,7 @@ instance, not the Rollout library.
 To use Rollout, you have to instantiate it with a storage implementation. This library 
 comes with an In-Memory implementation, which can be used for testing:
 
-```cfm
+```cfc
 var storage = new lib.storage.InMemoryStorage();
 
 var rollout = new lib.Rollout( storage );
@@ -41,7 +41,7 @@ var rollout = new lib.Rollout( storage );
 But, you'll definitely want to use the Jedis / Redis implementation so your feature 
 configurations actually persist across pages:
 
-```cfm
+```cfc
 var jedisPoolConfig = createObject( "java", "redis.clients.jedis.JedisPoolConfig" ).init();
 var jedisPool = createObject( "java", "redis.clients.jedis.JedisPool" ).init( jedisPoolConfig, javaCast( "string", "localhost" ) );
 var storage = new lib.storage.JedisStorage( jedisPool, "rollout-features" );
