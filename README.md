@@ -84,7 +84,30 @@ _still be active_ for explicit users and groups.
 ### Getting Features And Feature States
 
 My implementation of Rollout is optimized for `getFeatureStatesForUser()`. This will pull
-back all of the feature configuration for the given user in a single internal request.
+back all of the feature configuration for the given user in a single internal request. When
+making this request, you have the _option_ to pass in a collection of groups. If the collection
+is an array, the values indicate the groups that the user is a members of:
+
+```cfc
+var featureStates = rollout.getFeatureStatesForUser(
+	user.id,
+	[ "managers", "admins" ]
+);
+```
+
+If the collection is a struct, the keys of the struct represent the group names and the 
+struct values indicate whether or not the user is a member of that group. This approach allows
+the group membership to be calculated as part of the method invocation:
+
+```cfc
+var featureStates = rollout.getFeatureStatesForUser(
+	user.id,
+	{
+		managers: user.permissions.isManager,
+		admins: user.permissions.isAdmin
+	}
+);
+```
 
 * __getFeature__( required string featureName )
 * __getFeatureNames__()
