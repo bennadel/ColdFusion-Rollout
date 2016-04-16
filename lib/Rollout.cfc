@@ -11,8 +11,7 @@ component
 	*/
 	public any function init( required any storage ) {
 
-		// I am the JSON persistence mechanism. I implement a simple key-value store
-		// interface for string data.
+		// Store the injected properties.
 		variables.storage = storage;
 
 		return( this );
@@ -709,7 +708,7 @@ component
 		var BigInteger = createObject( "java", "java.math.BigInteger" );
 
 		// Generate our BigInteger operands.
-		var checksum = BigInteger.valueOf( javaCast( "long", getChecksum( reverse( userIdentifier ) & salt ) ) );
+		var checksum = BigInteger.valueOf( javaCast( "long", getChecksum( userIdentifier & salt ) ) );
 		var bucketCount = BigInteger.valueOf( javaCast( "int", 100 ) );
 
 		return( checksum.mod( bucketCount ) + 1 );
@@ -725,7 +724,7 @@ component
 	*/
 	private numeric function getChecksum( required string input ) {
 
-		var checksum = createObject( "java", "java.util.zip.CRC32" ).init();
+		var checksum = createObject( "java", "java.util.zip.Adler32" ).init();
 
 		checksum.update( charsetDecode( input, "utf-8" ) );
 		
@@ -745,7 +744,7 @@ component
 
 		try {
 
-			var featureSet = deserializeJson( storage.get() );
+			var featureSet = storage.get();
 
 		} catch ( any error ) {
 
@@ -777,7 +776,7 @@ component
 	*/
 	private void function saveFeatureSetData( required struct featureSet ) {
 
-		storage.set( serializeJson( featureSet ) );
+		storage.set( featureSet );
 
 	}
 

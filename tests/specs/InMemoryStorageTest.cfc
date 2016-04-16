@@ -18,16 +18,24 @@ component
 
 	public void function test_that_set_get_works() {
 
-		storage.set( "hello world" );
+		var value = {
+			hello: "world"
+		};
 
-		assert( storage.get() == "hello world" );
+		storage.set( value );
+
+		assert( objectEquals( value, storage.get() ) );
 		
 	}
 
 
 	public void function test_that_delete_works() {
 
-		storage.set( "hello world" );
+		var value = {
+			hello: "world"
+		};
+
+		storage.set( value );
 		storage.delete();
 
 		try {

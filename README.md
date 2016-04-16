@@ -18,11 +18,13 @@ to implement:
 ## Storage API
 
 Because the library stores all feature data a single JSON value, the storage mechanism
-doesn't have to deal with "keys" - it just deals with a value.
+doesn't have to deal with "keys" - it just deals with a single Struct value. The actual
+serialization of the data is deferred to the storage mechanism so that we can use storage
+that is not necessarily document oriented.
 
-* __delete__() - Deletes the persisted JSON value.
-* __get__() - Returns the persisted JSON value.
-* __set__( jsonData ) - Persists the given JSON value.
+* __delete__() - Deletes the persisted value.
+* __get__() - Returns the persisted value.
+* __set__( value ) - Persists the given value.
 
 If you are using the Jedis / Redis storage, the Redis key is defined as part of the storage
 instance, not the Rollout library.

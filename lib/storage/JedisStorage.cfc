@@ -13,6 +13,7 @@ component
 		required string key
 		) {
 
+		// Store the injected properties.
 		variables.jedisPool = arguments.jedisPool;
 		variables.key = arguments.key;
 
@@ -49,7 +50,7 @@ component
 	* 
 	* @output false 
 	*/
-	public string function get() {
+	public struct function get() {
 
 		var value = getResource(
 			function( redis ) {
@@ -69,7 +70,7 @@ component
 
 		}
 
-		return( value );
+		return( deserializeJson( value ) );
 
 	}
 
@@ -80,12 +81,12 @@ component
 	* @value I am the value being stored.
 	* @output false 
 	*/
-	public void function set( required string value ) {
+	public void function set( required struct value ) {
 
 		getResource(
 			function( redis ) {
 
-				redis.set( javaCast( "string", key ), javaCast( "string", value ) );
+				redis.set( javaCast( "string", key ), javaCast( "string", serializeJson( value ) ) );
 				
 			}
 		);

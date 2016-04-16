@@ -10,6 +10,10 @@ component
 	*/
 	public any function init() {
 
+		// Internally, we are storing the value as a string. We don't technically need
+		// to do this; but, since other persistence mechanisms will be using a string
+		// internally - this will help keep the various approaches (and any quirks 
+		// related to serialization) consistent across all persistence mechanisms.
 		storedValue = "";
 
 		return( this );
@@ -39,7 +43,7 @@ component
 	* 
 	* @output false 
 	*/
-	public string function get() {
+	public struct function get() {
 
 		if ( ! len( storedValue ) ) {
 
@@ -50,7 +54,7 @@ component
 
 		}
 
-		return( storedValue );
+		return( deserializeJson( storedValue ) );
 
 	}
 
@@ -61,9 +65,9 @@ component
 	* @value I am the value being stored.
 	* @output false 
 	*/
-	public void function set( required string value ) {
+	public void function set( required struct value ) {
 
-		storedValue = value;
+		storedValue = serializeJson( value );
 
 	}
 
